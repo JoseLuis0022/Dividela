@@ -90,11 +90,13 @@ export default function CapturePhotos() {
         "Analizar ticket".
       </p>
 
+      {/* Sin el atributo "capture": así iOS/Android muestran el menú nativo
+          completo (tomar foto / fototeca / elegir archivo) en vez de abrir
+          la cámara directamente. */}
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         multiple
         className="hidden"
         onChange={(e) => {
