@@ -220,3 +220,32 @@ async def confirm_session(session_id: str, db: Session = Depends(get_session)):
     out = _build_session_out(db, bill)
     await manager.broadcast(session_id, "session_confirmed", out.model_dump(mode="json"))
     return out
+
+
+@router.delete("/{session_id}", status_code=204)
+async def delete_session(session_id: str, db: Session = Depends(get_session)):
+    """El anfitrión termina la cuenta: se borra todo (ítems, participantes,
+    selecciones y la sesión misma) — nada queda guardado en el servidor."""
+    bill = _get_bill_or_404(db, session_id)
+
+    items = db.exec(select(Item).where(Item.session_id == session_id)).all()
+    item_ids = [i.id for i in items]
+    if item_ids:
+        selections = db.exec(
+            select(ItemSelection).where(ItemSelection.item_id.in_(item_ids))
+        ).all()
+        for selection in selections:
+            db.delete(selection)
+
+    for item in items:
+        db.delete(item)
+
+    participants = db.exec(select(Participant).where(Participant.session_id == session_id)).all()
+    for participant in participants:
+        db.delete(participant)
+
+    db.delete(bill)
+    db.commit()
+
+    await manager.broadcast(session_id, "session_ended", {})
+    return None

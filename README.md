@@ -6,7 +6,7 @@
 
 Fotografía el ticket, deja que un modelo de visión lo lea, comparte un código QR y que cada
 invitado marque desde su propio teléfono lo que consumió — sin crear cuenta, sin planillas, sin
-math a mano.
+hacer cuentas a mano.
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -29,13 +29,22 @@ math a mano.
    que reconstruye la lista de ítems consolidada y sin duplicados, aunque las fotos se traslapen entre sí.
 2. **Pantalla de confirmación editable** — el anfitrión corrige nombres, cantidades y precios antes
    de continuar; una alerta (no bloqueante) avisa si la suma no cuadra con el total impreso.
-3. **Se genera un código QR** (y un enlace copiable/compartible) que abre la sesión para los invitados.
+3. **Se genera un código QR** — y también un enlace copiable o compartible directo por WhatsApp/lo
+   que sea (Web Share API en iOS) — que abre la sesión para los invitados.
 4. **Cada invitado se une con solo su nombre** — sin registro, sin contraseña — y marca lo que
-   consumió o los ítems que se compartieron; el costo se divide automáticamente entre quienes los marcan.
-5. **Todo en tiempo real vía WebSockets**: selecciones, nuevos invitados y el estado "listo" de cada
-   quien se sincronizan al instante entre todos los dispositivos conectados a la sesión.
+   consumió o los ítems que se compartieron; el costo se divide automáticamente entre quienes los
+   marcan. Cada persona tiene un color y un icono asignados de forma estable para identificarse
+   de un vistazo, tanto en su propia pantalla como en la del anfitrión.
+5. **Todo en tiempo real vía WebSockets**: selecciones, nuevos invitados y el estado "Listo" de
+   cada quien se sincronizan al instante entre todos los dispositivos conectados a la sesión, con
+   reconexión automática si se cae el wifi del restaurante.
 6. **El anfitrión puede marcar lo suyo** y corregir la selección de cualquier invitado desde la
    misma pantalla del QR, sin salir de ahí.
+7. **Botón "Listo"** — tanto el anfitrión como cada invitado pueden avisar que ya terminaron de
+   marcar lo suyo; en cuanto el 100% de la mesa está listo, un aviso aparece para todos al instante.
+8. **Terminar y borrar** — el anfitrión puede cerrar la cuenta en cualquier momento: se elimina por
+   completo de la base de datos (ítems, invitados y selecciones) y se avisa en vivo a quien siga
+   conectado. No queda nada guardado en el servidor.
 
 ## 🖥️ Stack técnico
 

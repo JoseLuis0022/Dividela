@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, CheckCircle, WarningCircle } from "@phosphor-icons/react";
@@ -6,6 +6,7 @@ import PageContainer from "../../components/PageContainer.jsx";
 import Button from "../../components/Button.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
 import ConnectionBanner from "../../components/ConnectionBanner.jsx";
+import AllReadyBanner from "../../components/AllReadyBanner.jsx";
 import ItemsTableSkeleton from "../../components/Skeleton.jsx";
 import ParticipantsBar from "../../components/ParticipantsBar.jsx";
 import SelectorChips from "../../components/SelectorChips.jsx";
@@ -14,6 +15,7 @@ import { useToast } from "../../components/Toast.jsx";
 import { apiFetch, ApiError } from "../../utils/apiFetch.js";
 import { useSessionSocket } from "../../ws/useSessionSocket.js";
 import { formatQuantity } from "../../utils/format.js";
+import { allParticipantsReady } from "../../utils/readiness.js";
 
 export default function ParticipantView() {
   const { sessionId, participantId } = useParams();
@@ -41,8 +43,19 @@ export default function ParticipantView() {
   const connectionState = useSessionSocket(sessionId, (event, payload) => {
     if (["items_updated", "participant_joined", "session_confirmed"].includes(event)) {
       setSession(payload);
+    } else if (event === "session_ended") {
+      setStatus("ended");
     }
   });
+
+  const allReady = allParticipantsReady(session?.participants);
+  const wasAllReadyRef = useRef(false);
+  useEffect(() => {
+    if (allReady && !wasAllReadyRef.current) {
+      toast("¡Todos en la mesa ya están listos! 🎉", "success");
+    }
+    wasAllReadyRef.current = allReady;
+  }, [allReady, toast]);
 
   async function toggle(item) {
     if (!session) return;
@@ -130,6 +143,18 @@ export default function ParticipantView() {
     );
   }
 
+  if (status === "ended") {
+    return (
+      <PageContainer className="items-center justify-center">
+        <EmptyState
+          icon={<CheckCircle size={40} weight="duotone" />}
+          title="El anfitrión terminó la cuenta"
+          description="Ya se borró todo del servidor. ¡Gracias por usar Dividela!"
+        />
+      </PageContainer>
+    );
+  }
+
   const me = session.participants.find((p) => p.id === participantId);
   const myTotal = me?.total_owed ?? 0;
   const participantsById = new Map(session.participants.map((p) => [p.id, p]));
@@ -150,6 +175,8 @@ export default function ParticipantView() {
       </p>
 
       <ParticipantsBar participants={session.participants} meId={participantId} />
+
+      <AllReadyBanner show={allReady} />
 
       {session.items.length === 0 ? (
         <EmptyState

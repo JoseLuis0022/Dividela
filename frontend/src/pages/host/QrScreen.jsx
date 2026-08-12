@@ -1,26 +1,41 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
-import { X, UsersThree, WarningCircle, Copy, Check, ShareNetwork } from "@phosphor-icons/react";
+import {
+  X,
+  UsersThree,
+  WarningCircle,
+  Copy,
+  Check,
+  CheckCircle,
+  ShareNetwork,
+  Prohibit,
+} from "@phosphor-icons/react";
 import PageContainer from "../../components/PageContainer.jsx";
 import Card from "../../components/Card.jsx";
 import Badge from "../../components/Badge.jsx";
 import Avatar from "../../components/Avatar.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
 import ConnectionBanner from "../../components/ConnectionBanner.jsx";
+import AllReadyBanner from "../../components/AllReadyBanner.jsx";
 import Button from "../../components/Button.jsx";
+import Modal from "../../components/Modal.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { apiFetch, ApiError } from "../../utils/apiFetch.js";
 import { useSessionSocket } from "../../ws/useSessionSocket.js";
 import { getParticipant } from "../../utils/storage.js";
+import { allParticipantsReady } from "../../utils/readiness.js";
 
 export default function QrScreen() {
   const { sessionId } = useParams();
+  const navigate = useNavigate();
   const toast = useToast();
   const [status, setStatus] = useState("loading");
   const [session, setSession] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [endModalOpen, setEndModalOpen] = useState(false);
+  const [ending, setEnding] = useState(false);
   const host = getParticipant(sessionId);
 
   async function copyLink() {
@@ -72,6 +87,54 @@ export default function QrScreen() {
       setSession(payload);
     }
   });
+
+  const allReady = allParticipantsReady(session?.participants);
+  const wasAllReadyRef = useRef(false);
+  useEffect(() => {
+    if (allReady && !wasAllReadyRef.current) {
+      toast("¡Todos en la mesa ya están listos! 🎉", "success");
+    }
+    wasAllReadyRef.current = allReady;
+  }, [allReady, toast]);
+
+  async function toggleHostReady() {
+    if (!session || !host) return;
+    const me = session.participants.find((p) => p.id === host.participantId);
+    const nextReady = !(me?.is_ready ?? false);
+
+    setSession((prev) => ({
+      ...prev,
+      participants: prev.participants.map((p) =>
+        p.id === host.participantId ? { ...p, is_ready: nextReady } : p
+      ),
+    }));
+
+    try {
+      const data = await apiFetch(`/api/participants/${host.participantId}/ready`, {
+        method: "POST",
+        body: { ready: nextReady },
+      });
+      setSession(data);
+      if (nextReady) toast("Le avisamos a todos que ya terminaste 🎉", "success");
+    } catch (err) {
+      await load();
+      toast(err instanceof ApiError ? err.message : "No pudimos actualizar tu estado.", "error");
+    }
+  }
+
+  async function endSession() {
+    setEnding(true);
+    try {
+      await apiFetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
+      toast("Cuenta terminada y borrada del servidor", "success");
+      navigate("/");
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "No pudimos terminar la cuenta.", "error");
+    } finally {
+      setEnding(false);
+      setEndModalOpen(false);
+    }
+  }
 
   async function toggleSelection(item, targetParticipantId) {
     if (!session) return;
@@ -130,10 +193,22 @@ export default function QrScreen() {
     session.participants.filter((p) => item.selected_by.includes(p.id));
 
   const formatQty = (q) => (Number.isInteger(q) ? q : q.toFixed(2).replace(/\.?0+$/, ""));
+  const me = host && session.participants.find((p) => p.id === host.participantId);
+  const myTotal = me?.total_owed ?? 0;
 
   return (
-    <PageContainer>
+    <PageContainer className="pb-28">
       <ConnectionBanner state={connectionState} />
+
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-lg font-bold text-[var(--text)]">Tu cuenta</h1>
+        <button
+          onClick={() => setEndModalOpen(true)}
+          className="flex items-center gap-1 text-xs font-medium text-[var(--error)] px-2 py-1 rounded-lg hover:bg-[var(--error)]/10"
+        >
+          <Prohibit size={14} weight="bold" /> Terminar
+        </button>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
@@ -159,6 +234,8 @@ export default function QrScreen() {
           <ShareNetwork size={16} weight="bold" /> Compartir
         </Button>
       </div>
+
+      <AllReadyBanner show={allReady} />
 
       <div className="flex items-center gap-2 mb-3">
         <UsersThree size={18} className="text-[var(--primary)]" />
@@ -267,6 +344,55 @@ export default function QrScreen() {
           );
         })}
       </div>
+
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none px-4"
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      >
+        <div className="w-full max-w-md bg-[var(--text)] text-white rounded-2xl px-5 py-4 shadow-xl pointer-events-auto">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-white/70">Tu total</span>
+            <motion.span
+              key={myTotal}
+              initial={{ scale: 1.12 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+              className="text-lg font-bold tabular-nums"
+            >
+              ${myTotal.toFixed(2)}
+            </motion.span>
+          </div>
+          <motion.button
+            onClick={toggleHostReady}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 450, damping: 30 }}
+            className={`w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+              me?.is_ready ? "bg-white/10 text-white/80" : "bg-white text-[var(--text)]"
+            }`}
+          >
+            <CheckCircle size={18} weight={me?.is_ready ? "fill" : "bold"} />
+            {me?.is_ready ? "Listo — toca para seguir editando" : "Ya terminé, avisar a todos"}
+          </motion.button>
+        </div>
+      </motion.div>
+
+      <Modal open={endModalOpen} onClose={() => !ending && setEndModalOpen(false)} title="¿Terminar esta cuenta?">
+        <p className="text-sm text-[var(--text-secondary)] mb-5">
+          Se eliminará todo lo relacionado con esta cuenta — ítems, invitados y selecciones — del
+          servidor. Esta acción no se puede deshacer.
+        </p>
+        <div className="flex gap-2">
+          <Button variant="secondary" fullWidth onClick={() => setEndModalOpen(false)} disabled={ending}>
+            Cancelar
+          </Button>
+          <Button variant="danger" fullWidth onClick={endSession} disabled={ending}>
+            {ending ? "Terminando…" : "Sí, terminar y borrar"}
+          </Button>
+        </div>
+      </Modal>
     </PageContainer>
   );
 }
