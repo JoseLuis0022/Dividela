@@ -1,0 +1,8 @@
+.env
+apikey.txt
+**/__pycache__/
+*.pyc
+frontend/node_modules/
+frontend/dist/
+backend/*.db
+data/

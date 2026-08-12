@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:${FRONTEND_PORT:-5173}}
+      DATABASE_PATH: /data/dividela.db
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash-lite}
+    volumes:
+      - dividela_data:/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Si BACKEND_BASE_URL está vacío, config.js del frontend infiere la
+        # URL del backend a partir del hostname actual + BACKEND_PORT (útil
+        # en local/LAN). Al desplegar con Cloudflare Tunnel, fija aquí el
+        # subdominio público del backend, ej. https://api-dividela.tudominio.com
+        VITE_API_BASE_URL: ${BACKEND_BASE_URL:-}
+        VITE_BACKEND_PORT: ${BACKEND_PORT:-8000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  dividela_data:

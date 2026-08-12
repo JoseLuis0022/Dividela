@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* Sistema de theming por variables CSS — mismo patrón que Farmora, pero fijo
+   a una sola paleta azul (no hay selector de tema en esta app). */
+:root {
+  --primary: #2563eb;
+  --primary-light: #60a5fa;
+  --primary-dark: #1d4ed8;
+  --secondary: #6b7280;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #d97706;
+
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --text-on-primary: #ffffff;
+
+  --background: #f4f7fe;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  /* iOS Safari: evita que el usuario agrande el texto del sistema y rompa
+     el layout calibrado a mano; el zoom con gestos sigue disponible. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh; /* en iOS Safari, 100vh no descuenta la barra de direcciones */
+  background: var(--background);
+  color: var(--text);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none; /* sin "rebote" que deje ver el fondo del navegador */
+}
+
+/* Botones, links y filas tocables: sin el delay de 300ms ni el doble-tap-zoom de iOS. */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* iOS hace zoom automático al enfocar un input si su font-size es <16px;
+   se fuerza 16px en todos los campos para evitarlo, sin importar el
+   tamaño visual que le dé Tailwind (se compensa con line-height/padding). */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* Zona segura del iPhone (notch / Dynamic Island / home indicator). */
+.safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Cifras que cambian en vivo (totales) no deben "bailar" de ancho. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus visible bien diseñado en vez de eliminarlo. */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respeta prefers-reduced-motion: se cae a solo fade en vez de desplazamientos. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: shimmer 1.4s infinite;
+}
