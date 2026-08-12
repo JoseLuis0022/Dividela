@@ -46,6 +46,23 @@ hacer cuentas a mano.
    completo de la base de datos (ítems, invitados y selecciones) y se avisa en vivo a quien siga
    conectado. No queda nada guardado en el servidor.
 
+## 📸 Capturas
+
+<div align="center">
+<table>
+<tr>
+<td align="center" width="33%"><img src="screenshots/01-inicio.png" width="260"/><br/><sub>Inicio — crear cuenta</sub></td>
+<td align="center" width="33%"><img src="screenshots/02-captura-ticket.png" width="260"/><br/><sub>Fotografía del ticket</sub></td>
+<td align="center" width="33%"><img src="screenshots/03-revisar-items.png" width="260"/><br/><sub>Revisión de ítems (OCR)</sub></td>
+</tr>
+<tr>
+<td align="center" width="33%"><img src="screenshots/04-qr.png" width="260"/><br/><sub>Código QR de la sesión</sub></td>
+<td align="center" width="33%"><img src="screenshots/05-marcar-items.png" width="260"/><br/><sub>Cada invitado marca lo suyo</sub></td>
+<td align="center" width="33%"><img src="screenshots/06-terminar-cuenta.png" width="260"/><br/><sub>Terminar y borrar la cuenta</sub></td>
+</tr>
+</table>
+</div>
+
 ## 🖥️ Stack técnico
 
 | Capa | Tecnología |
