@@ -100,7 +100,7 @@ export default function JoinSession() {
         <form onSubmit={handleJoin} className="space-y-4">
           <InputField
             label="Tu nombre"
-            placeholder="Ej. Ana"
+            placeholder="Ej. Mia"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
